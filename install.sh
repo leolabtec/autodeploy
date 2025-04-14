@@ -25,12 +25,12 @@ echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 创建 Python 虚拟环境 ==========
+# ========== 2. 创建 Python 虚拟环境（增强版） ==========
 echo "[+] 创建虚拟环境..."
-if python3 -m venv --help &>/dev/null; then
-  python3 -m venv .venv
+if python3 -m venv .venv 2>/dev/null; then
+  echo "[✓] 使用 python3 -m venv 创建成功"
 else
-  echo "[i] 系统不支持 python3 -m venv，使用 virtualenv 替代..."
+  echo "[!] venv 创建失败，尝试使用 virtualenv..."
   python3 -m pip install --upgrade pip setuptools virtualenv --break-system-packages
   python3 -m virtualenv .venv
 fi
@@ -97,5 +97,7 @@ else
 fi
 
 # ========== 7. 启动主菜单（使用 exec 替换 shell） ==========
-echo "[+] 启动 AutoDeploy 主菜单..."
+echo
+echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
+sleep 1
 exec "$VENV_DIR/bin/python" main.py
