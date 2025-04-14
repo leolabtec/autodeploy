@@ -1,3 +1,5 @@
+import os
+import subprocess
 import typer
 from rich import print
 from rich.panel import Panel
@@ -26,6 +28,11 @@ def startup_checks():
         utils.log_error("⚠️ 网络连接异常，无法访问 github.com")
 
     utils.log_info("如需更新项目，请重新运行 install.sh")
+
+def exit_script():
+    # 仅退出虚拟环境，不需要退出 shell
+    print("[✓] 退出虚拟环境，回到宿主机终端...")
+    os.system("deactivate")
 
 @app.command()
 def start():
@@ -72,9 +79,12 @@ def start():
 
             if sub_choice == "1":
                 shortcut.set_shortcut()
-        else:
+        elif choice == "0":
             print("👋 再见！")
-            raise typer.Exit()
+            exit_script()  # 退出时调用退出函数
+            break
+        else:
+            print("[INFO] 请输入有效的编号。")
 
 if __name__ == "__main__":
     app()
