@@ -6,11 +6,35 @@ REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
 VENV_DIR="$INSTALL_DIR/.venv"
 
-# ========== 0. 检查依赖项 ==========
+# ========== 0. 检查并自动安装依赖项 ==========
 check_dep() {
   if ! command -v "$1" &>/dev/null; then
-    echo "[-] 缺少必要依赖：$1，请先安装后再运行本脚本。"
-    exit 1
+    echo "[!] 缺少必要依赖：$1，正在尝试自动安装..."
+    
+    # 针对特定缺失依赖执行自动安装
+    if [[ "$1" == "docker-compose" ]]; then
+      # 安装 docker-compose
+      echo "[+] 正在安装 docker-compose..."
+      curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+      chmod +x /usr/local/bin/docker-compose
+    elif [[ "$1" == "docker" ]]; then
+      # 安装 docker
+      echo "[+] 正在安装 Docker..."
+      apt-get update
+      apt-get install -y docker.io
+    elif [[ "$1" == "python3-venv" ]]; then
+      # 安装 python3-venv
+      echo "[+] 正在安装 python3-venv..."
+      apt-get install -y python3-venv
+    fi
+
+    # 检查依赖是否安装成功
+    if ! command -v "$1" &>/dev/null; then
+      echo "[!] 安装失败，无法找到 $1。请手动安装并重试。"
+      exit 1
+    else
+      echo "[✓] 成功安装 $1"
+    fi
   fi
 }
 
@@ -18,6 +42,7 @@ echo "[+] 正在检查并准备系统关键依赖..."
 check_dep python3
 check_dep pip
 check_dep docker
+check_dep docker-compose
 check_dep crontab
 
 # ========== 1. 初始化目录结构 ==========
@@ -65,19 +90,25 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 5. 拉取 start.py 脚本 ==========
-echo "[+] 拉取 start.py 启动脚本..."
-curl -v -sS "https://raw.githubusercontent.com/leolabtec/autodeploy/refs/heads/main/start.py" -o "$INSTALL_DIR/start.py"
-
-if [ -f "$INSTALL_DIR/start.py" ]; then
-    echo "[✓] start.py 文件拉取成功！"
-else
-    echo "[!] start.py 文件拉取失败！"
-fi
+# ========== 5. 拉取 start.py 和 exit.py 脚本 ==========
+echo "[+] 拉取 start.py 和 exit.py 启动脚本..."
+for file in start.py exit.py; do
+  curl -sS "$REPO_RAW/$file" -o "$INSTALL_DIR/$file"
+done
 
 # ========== 6. 启动或重启 Caddy 容器 ==========
 echo "[+] 启动 Caddy 容器..."
+
 mkdir -p /home/dockerdata/docker_caddy
+
+# 写入默认 Caddyfile（若不存在）
+CADDYFILE="/home/dockerdata/docker_caddy/Caddyfile"
+if [ ! -f "$CADDYFILE" ]; then
+  echo "[+] 准备默认 Caddyfile..."
+  cat <<EOF > "$CADDYFILE"
+# AutoDeploy 默认反代配置（占位）
+EOF
+fi
 
 docker rm -f caddy 2>/dev/null || true
 
@@ -107,4 +138,15 @@ echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
 # 自动运行 start.py 脚本，进入虚拟环境并启动 main.py
-/opt/autodeploy/start.py
+python3 /opt/autodeploy/start.py
+
+# 退出虚拟环境（仅当虚拟环境激活时）
+if [[ "$VIRTUAL_ENV" != "" ]]; then
+    deactivate
+    echo "[✓] 退出虚拟环境，回到宿主机终端..."
+else
+    echo "[✓] 虚拟环境未激活，直接返回宿主机终端..."
+fi
+
+# 自动退出 shell 回到宿主机
+exit
