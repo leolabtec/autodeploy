@@ -4,7 +4,7 @@ from rich.panel import Panel
 from core import utils
 from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut
 
-# 实例化 app
+# 创建Typer应用实例
 app = typer.Typer()
 
 def show_logo():
@@ -28,7 +28,7 @@ def startup_checks():
 
     utils.log_info("如需更新项目，请重新运行 install.sh")
 
-@app.command()  # 注册 start 命令
+@app.command()
 def start():
     while True:
         startup_checks()
@@ -44,10 +44,14 @@ def start():
         print("0. 退出")
 
         try:
-            choice = typer.prompt("请输入编号 [0]", default="0", show_default=False)
-        except (typer.Abort, KeyboardInterrupt, EOFError):
-            choice = "0"  # 默认退出
-            print("\n[red]⚠️ 输入中断，返回主菜单[/red]")
+            choice = typer.prompt("请输入编号", default="0")
+            # 如果输入的不是0-7之间的数字，提示重新输入
+            while choice not in ["0", "1", "2", "3", "4", "5", "6", "7"]:
+                print("[red]无效输入，请输入有效选项！[/red]")
+                choice = typer.prompt("请输入编号", default="0")
+        except (EOFError, KeyboardInterrupt):
+            print("\n[red]⚠️ 未检测到输入，已返回主菜单[/red]")
+            continue
 
         if choice == "1":
             wordpress.create_wordpress_site()
@@ -66,15 +70,14 @@ def start():
             print("1. 设置启动快捷键")
             print("0. 返回主菜单")
             try:
-                sub_choice = typer.prompt("请输入编号 [0]", default="0", show_default=False)
-            except (typer.Abort, KeyboardInterrupt, EOFError):
+                sub_choice = typer.prompt("请输入编号", default="0")
+                if sub_choice == "1":
+                    shortcut.set_shortcut()
+            except (EOFError, KeyboardInterrupt):
                 continue  # 返回主菜单
-
-            if sub_choice == "1":
-                shortcut.set_shortcut()
         elif choice == "0":
             print("👋 再见！")
             raise typer.Exit()
 
 if __name__ == "__main__":
-    app()  # 启动 typer 命令行应用
+    app()
