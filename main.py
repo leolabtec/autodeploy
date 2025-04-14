@@ -1,11 +1,8 @@
-# main.py
-
 import typer
 from rich import print
 from rich.panel import Panel
-from rich.prompt import Prompt
-from core import utils
-from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut, mirror
+from core import utils, sync
+from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut
 
 app = typer.Typer()
 
@@ -14,7 +11,7 @@ def show_logo():
 ██╗     ███████╗ ██████╗ ██╗      █████╗ ██████╗ 
 ██║     ██╔════╝██╔═══██╗██║     ██╔══██╗██╔══██╗
 ██║     █████╗  ██║   ██║██║     ███████║██████╔╝
-██║     ██╔══╝  ██║   ██║██║     ██╔══██║██╔═══╝ 
+██║     ██╔══╝  ██║   ██║██║     ██╔══██║██║     
 ███████╗███████╗╚██████╔╝███████╗██║  ██║██║     
 ╚══════╝╚══════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝     
 [/bold cyan]"""
@@ -27,6 +24,14 @@ def startup_checks():
         utils.log_success("网络连接正常")
     else:
         utils.log_error("⚠️ 网络连接异常，无法访问 github.com")
+
+    try:
+        if sync.check_update_available():
+            print("[yellow]🆕 检测到项目代码有新版本，可运行 `python core/sync.py` 更新[/yellow]")
+        else:
+            utils.log_info("当前已是最新版。")
+    except:
+        utils.log_error("检查更新失败（可能网络不通）")
 
 @app.command()
 def start():
@@ -58,27 +63,12 @@ def start():
         elif choice == "6":
             uninstall.uninstall_all()
         elif choice == "7":
-            while True:
-                print("\n[bold cyan]🔧 配置系统菜单[/bold cyan]")
-                print("1. 设置启动快捷键")
-                print("2. 清除已有快捷键")
-                print("3. 启用国内镜像源")
-                print("4. 还原官方镜像源")
-                print("0. 返回主菜单")
-                sub_choice = Prompt.ask("请输入编号", default="0")
-
-                if sub_choice == "1":
-                    shortcut.set_alias()
-                elif sub_choice == "2":
-                    shortcut.remove_alias()
-                elif sub_choice == "3":
-                    mirror.enable_mirrors()
-                elif sub_choice == "4":
-                    mirror.reset_mirrors()
-                elif sub_choice == "0":
-                    break
-                else:
-                    print("[yellow]⚠️ 无效输入，请重新选择。[/yellow]")
+            print("\n[bold green]📦 配置系统：[/bold green]")
+            print("1. 设置启动快捷键")
+            print("0. 返回主菜单")
+            sub_choice = typer.prompt("请输入编号", default="0")
+            if sub_choice == "1":
+                shortcut.set_shortcut()
         else:
             print("👋 再见！")
             raise typer.Exit()
