@@ -102,11 +102,9 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 7. 提示手动启动主菜单 ==========
-echo
-echo "[✓] 环境部署完成！"
-echo "[📋] 你可以运行以下命令来启动 AutoDeploy 主菜单："
-echo "python /opt/autodeploy/start_autodeploy.py"
-echo "[🔄] 该命令会自动激活虚拟环境并启动 main.py"
-echo "[🔑] 如果你希望跳过此手动步骤，建议添加快捷键："
-echo "[🔑] alias g='cd /opt/autodeploy && source .venv/bin/activate && python /opt/autodeploy/start_autodeploy.py'"
+# ========== 7. 自动执行 start.py 启动主菜单 ==========
+echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
+sleep 1
+
+# 自动运行 start.py 脚本，进入虚拟环境并启动 main.py
+python3 /opt/autodeploy/start.py
