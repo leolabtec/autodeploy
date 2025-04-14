@@ -5,6 +5,7 @@ def exit_virtualenv():
     """退出虚拟环境"""
     if "VIRTUAL_ENV" in os.environ:
         print("[✓] 退出虚拟环境...")
+
         # 清除虚拟环境的环境变量
         os.environ["VIRTUAL_ENV"] = ""
         sys.path = [p for p in sys.path if not p.startswith(os.environ["VIRTUAL_ENV"])]
