@@ -42,7 +42,11 @@ def start():
         print("7. 配置系统")
         print("0. 退出")
 
-        choice = typer.prompt("请输入编号", default="0")
+        try:
+            choice = typer.prompt("请输入编号", default="0")
+        except (EOFError, KeyboardInterrupt):
+            print("\n[red]⚠️ 未检测到输入，已返回主菜单[/red]")
+            continue
 
         if choice == "1":
             wordpress.create_wordpress_site()
@@ -60,7 +64,12 @@ def start():
             print("\n[bold green]📦 配置系统：[/bold green]")
             print("1. 设置启动快捷键")
             print("0. 返回主菜单")
-            sub_choice = typer.prompt("请输入编号", default="0")
+            try:
+                sub_choice = typer.prompt("请输入编号", default="0")
+            except (EOFError, KeyboardInterrupt):
+                print("\n[red]⚠️ 未检测到输入，已返回主菜单[/red]")
+                continue
+
             if sub_choice == "1":
                 shortcut.set_shortcut()
         else:
