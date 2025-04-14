@@ -2,7 +2,7 @@
 
 set -e
 
-# 防止 apt 弹出 whiptail 等图形提示窗口
+# 防止 apt 弹出 whiptail 界面
 export DEBIAN_FRONTEND=noninteractive
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
@@ -42,16 +42,25 @@ check_dep docker
 check_dep docker-compose
 check_dep crontab
 
-# 检查 venv 模块是否可用，并动态安装匹配版本
+# ========== venv 检查与 ensurepip 修复 ==========
 if ! python3 -m venv --help &>/dev/null; then
-  PYVER=$(python3 -V 2>&1 | cut -d " " -f2 | cut -d "." -f1,2)  # 获取 3.11
+  PYVER=$(python3 -V 2>&1 | cut -d " " -f2 | cut -d "." -f1,2)
   echo "[!] 未检测到 venv 模块，尝试安装 python${PYVER}-venv..."
   apt update && apt install -y "python${PYVER}-venv"
+
   if ! python3 -m venv --help &>/dev/null; then
-    echo "[-] 安装 venv 模块失败，请手动运行：apt install python${PYVER}-venv"
+    echo "[!] venv 模块仍不可用，尝试修复 ensurepip..."
+    apt install -y python3-ensurepip
+    python3 -m ensurepip --upgrade
+  fi
+
+  if ! python3 -m venv --help &>/dev/null; then
+    echo "[-] 安装 venv 模块失败，请手动执行："
+    echo "    apt install python${PYVER}-venv python3-ensurepip"
     exit 1
   fi
-  echo "[✓] venv 安装成功"
+
+  echo "[✓] venv 模块已准备就绪"
 fi
 
 # ========== 1. 初始化目录结构 ==========
