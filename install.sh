@@ -65,7 +65,11 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 5. 启动或重启 Caddy 容器 ==========
+# ========== 5. 拉取 start.py 脚本 ==========
+echo "[+] 拉取 start.py 启动脚本..."
+curl -sS "https://raw.githubusercontent.com/leolabtec/autodeploy/refs/heads/main/start.py" -o "$INSTALL_DIR/start.py"
+
+# ========== 6. 启动或重启 Caddy 容器 ==========
 echo "[+] 启动 Caddy 容器..."
 
 mkdir -p /home/dockerdata/docker_caddy
@@ -92,7 +96,7 @@ docker run -d \
 
 echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
-# ========== 6. 添加定时巡检任务 ==========
+# ========== 7. 添加定时巡检任务 ==========
 echo "[+] 设置 Caddy 巡检任务..."
 CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
 if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
@@ -102,9 +106,15 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 7. 自动执行 start.py 启动主菜单 ==========
+# ========== 8. 自动执行 start.py 启动主菜单 ==========
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
 # 自动运行 start.py 脚本，进入虚拟环境并启动 main.py
 python3 /opt/autodeploy/start.py
+
+# 退出虚拟环境
+deactivate
+
+# 自动退出 shell 回到宿主机
+exit
