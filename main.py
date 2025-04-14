@@ -1,7 +1,7 @@
 import typer
 from rich import print
 from rich.panel import Panel
-from core import utils, sync
+from core import utils
 from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut
 
 app = typer.Typer()
@@ -25,13 +25,7 @@ def startup_checks():
     else:
         utils.log_error("⚠️ 网络连接异常，无法访问 github.com")
 
-    try:
-        if sync.check_update_available():
-            print("[yellow]🆕 检测到项目代码有新版本，可运行 `python core/sync.py` 更新[/yellow]")
-        else:
-            utils.log_info("当前已是最新版。")
-    except:
-        utils.log_error("检查更新失败（可能网络不通）")
+    utils.log_info("如需更新项目，请重新运行 install.sh")
 
 @app.command()
 def start():
