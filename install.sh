@@ -25,18 +25,23 @@ echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 创建 Python 虚拟环境（彻底稳定） ==========
+# ========== 2. 创建 Python 虚拟环境（最终修复版） ==========
 echo "[+] 创建虚拟环境..."
 
-if python3 -c "import venv; venv.create('$VENV_DIR')" 2>/dev/null; then
-  echo "[✓] 使用 python3 自带 venv 创建成功"
+set +e
+python3 -m venv .venv
+VENV_SUCCESS=$?
+set -e
+
+if [ "$VENV_SUCCESS" -eq 0 ]; then
+  echo "[✓] 使用 python3 -m venv 创建成功"
 else
-  echo "[!] venv 模块不可用或创建失败，尝试使用 virtualenv..."
+  echo "[!] venv 创建失败，尝试使用 virtualenv..."
   python3 -m pip install --upgrade pip setuptools virtualenv --break-system-packages
-  python3 -m virtualenv "$VENV_DIR"
+  python3 -m virtualenv .venv
 fi
 
-source "$VENV_DIR/bin/activate"
+source .venv/bin/activate
 
 # ========== 3. 安装依赖 ==========
 echo "[+] 安装 requirements.txt..."
@@ -97,14 +102,11 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 7. 启动主菜单 ==========
+# ========== 7. 提示手动启动主菜单 ==========
 echo
-echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
-sleep 1
-if [ -t 0 ]; then
-  echo "[+] 启动 AutoDeploy 主菜单..."
-  exec "$VENV_DIR/bin/python" main.py
-else
-  echo "[✓] 安装完成。你可以稍后运行："
-  echo "cd /opt/autodeploy && source .venv/bin/activate && python main.py"
-fi
+echo "[✓] 环境部署完成！"
+echo "[📋] 你可以运行以下命令来启动 AutoDeploy 主菜单："
+echo "python /opt/autodeploy/start_autodeploy.py"
+echo "[🔄] 该命令会自动激活虚拟环境并启动 main.py"
+echo "[🔑] 如果你希望跳过此手动步骤，建议添加快捷键："
+echo "[🔑] alias g='cd /opt/autodeploy && source .venv/bin/activate && python /opt/autodeploy/start_autodeploy.py'"
