@@ -93,14 +93,11 @@ done
 echo "[+] 准备默认 Caddyfile 配置..."
 mkdir -p /home/dockerdata/docker_caddy
 
-# 修复误创建为目录的问题
-if [ -d /home/dockerdata/docker_caddy/Caddyfile ]; then
-  echo "[!] 检测到 Caddyfile 是目录，删除重建..."
-  rm -rf /home/dockerdata/docker_caddy/Caddyfile
-fi
-
-# 若文件不存在则创建默认文件
+# 如果不是普通文件就删除（可能是目录、链接、挂载点等）
 if [ ! -f /home/dockerdata/docker_caddy/Caddyfile ]; then
+  echo "[!] 检测到 Caddyfile 非正常文件类型，强制重建..."
+  rm -rf /home/dockerdata/docker_caddy/Caddyfile
+
   cat <<EOF > /home/dockerdata/docker_caddy/Caddyfile
 :80 {
     respond "Caddy is running"
