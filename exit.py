@@ -1,31 +1,16 @@
-import os
-import sys
+import subprocess
 
 def exit_virtualenv():
-    """退出虚拟环境"""
-    if "VIRTUAL_ENV" in os.environ:
-        print("[✓] 退出虚拟环境...")
-
-        # 清除虚拟环境的环境变量
-        os.environ["VIRTUAL_ENV"] = ""
-        sys.path = [p for p in sys.path if not p.startswith(os.environ["VIRTUAL_ENV"])]
-        
-        # 执行 deactivate 脚本
-        deactivate_script = os.path.join(os.environ["VIRTUAL_ENV"], "bin", "deactivate")
-        if os.path.exists(deactivate_script):
-            try:
-                exec(open(deactivate_script).read())  # 执行 deactivate 脚本
-            except Exception as e:
-                print(f"[!] 错误：无法执行 deactivate 脚本: {e}")
-        else:
-            print("[!] 没有找到 deactivate 脚本，虚拟环境可能已被退出。")
-    else:
-        print("[✓] 没有激活虚拟环境，跳过退出。")
+    """模拟用户在虚拟环境中直接输入 deactivate"""
+    try:
+        # 使用 subprocess 调用 deactivate 命令，模拟用户输入并退出虚拟环境
+        subprocess.run(["deactivate"], check=True, shell=True)
+        print("[✓] 已退出虚拟环境。")
+    except subprocess.CalledProcessError as e:
+        print(f"[!] 退出虚拟环境失败: {e}")
 
 def main():
     exit_virtualenv()
-    print("[✓] 已退出虚拟环境，并返回宿主机终端。")
-    sys.exit(0)  # 退出脚本，回到宿主机终端
 
 if __name__ == "__main__":
     main()
