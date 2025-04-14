@@ -1,52 +1,50 @@
-# modules/halo.py
-
-import random
-import string
-from pathlib import Path
+import os
+import subprocess
 from rich import print
-from core import utils
-from core import docker_ops
-from core import caddy
+from rich.prompt import Prompt
+import socket
 
-BASE_DIR = "/home/dockerdata/docker_web"
-
-def get_random_port(base=8090):
-    port = random.randint(30000, 39999)
-    if utils.is_port_in_use(port):
-        return get_random_port(base)
-    return port
+def is_domain_resolved(domain):
+    try:
+        socket.gethostbyname(domain)
+        return True
+    except socket.gaierror:
+        return False
 
 def create_halo_site():
-    utils.log_info("开始部署 Halo 博客...")
+    print("[bold green][INFO] 开始部署 Halo 博客...[/bold green]")
 
-    domain = input("请输入要部署的域名（如 halo.example.com）: ").strip()
-    sitename = "halo_" + domain.replace(".", "_")
-    site_dir = Path(BASE_DIR) / sitename
-    site_dir.mkdir(parents=True, exist_ok=True)
+    domain = Prompt.ask("请输入要部署的域名（如 blog.example.com）").strip().lower()
 
-    halo_port = get_random_port()
+    if not is_domain_resolved(domain):
+        print(f"[red]❌ 域名 {domain} 无法解析，请先配置正确的解析记录。部署已中止。[/red]")
+        return
 
-    compose_content = f"""
-version: '3'
+    base_dir = f"/home/dockerdata/docker_web/{domain.replace('.', '_')}"
+    os.makedirs(base_dir, exist_ok=True)
+
+    # 写入 docker-compose.yml
+    with open(os.path.join(base_dir, "docker-compose.yml"), "w") as f:
+        f.write(f"""version: '3'
+
 services:
   halo:
-    image: halohub/halo:2.11
-    container_name: {sitename}
+    image: halohub/halo:2.15
     restart: always
     ports:
-      - "127.0.0.1:{halo_port}:8090"
+      - "127.0.0.1:31{domain[-2:]}:8090"
     volumes:
-      - ./data:/root/.halo2
-"""
-    (site_dir / "docker-compose.yml").write_text(compose_content)
+      - ./halo:/root/.halo2
+    environment:
+      - SPRING_R2DBC_URL=r2dbc:h2:file:///root/.halo2/db/halo
+""")
 
-    # 启动容器
-    docker_ops.compose_up(site_dir)
+    print("[cyan]🚀 正在启动 Halo 服务容器...[/cyan]")
+    subprocess.run(["docker-compose", "up", "-d"], cwd=base_dir)
 
-    # 添加反代配置
-    utils.log_info("配置 Caddy 反向代理...")
-    caddy.add_proxy(domain=domain, port=halo_port)
+    # 添加反代
+    from core import caddy
+    caddy.add_proxy(domain, f"127.0.0.1:31{domain[-2:]}")
 
-    print(f"[green]🎉 Halo 博客已部署并配置 HTTPS！[/green]")
-    print(f"🌐 访问地址：https://{domain}")
-    print(f"📁 数据目录：{site_dir}/data")
+    print(f"[green]✅ Halo 博客已部署：https://{domain}[/green]")
+    print("[blue]首次打开需初始化账号[/blue]")
