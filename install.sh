@@ -6,22 +6,33 @@ REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
 VENV_DIR="$INSTALL_DIR/.venv"
 
-# ========== 0. 检查依赖项 ==========
+# ========== 0. 自动检查并静默安装依赖项 ==========
 check_dep() {
   if ! command -v "$1" &>/dev/null; then
-    echo "[-] 缺少必要依赖：$1，请先运行以下命令安装："
+    echo "[!] 未检测到 $1，正在尝试自动安装..."
+
     case "$1" in
-      python3) echo "    apt install -y python3" ;;
-      pip) echo "    apt install -y python3-pip" ;;
-      docker) echo "    apt install -y docker.io" ;;
-      docker-compose) echo "    apt install -y docker-compose" ;;
-      crontab) echo "    apt install -y cron" ;;
+      python3) apt update && apt install -y python3 ;;
+      pip) apt update && apt install -y python3-pip ;;
+      docker) apt update && apt install -y docker.io ;;
+      docker-compose) apt update && apt install -y docker-compose ;;
+      crontab) apt update && apt install -y cron ;;
+      *)
+        echo "[-] 未知依赖：$1，无法自动安装"
+        exit 1
+        ;;
     esac
-    exit 1
+
+    if ! command -v "$1" &>/dev/null; then
+      echo "[-] 安装 $1 失败，请手动安装后重试"
+      exit 1
+    fi
+
+    echo "[✓] $1 安装成功"
   fi
 }
 
-echo "[+] 正在检查系统关键依赖..."
+echo "[+] 正在检查并准备系统关键依赖..."
 check_dep python3
 check_dep pip
 check_dep docker
@@ -30,9 +41,13 @@ check_dep crontab
 
 # 检查 venv 模块可用性
 if ! python3 -m venv --help &>/dev/null; then
-  echo "[-] 当前 python3 缺少 venv 模块，请运行以下命令安装："
-  echo "    apt install -y python3-venv"
-  exit 1
+  echo "[!] 未检测到 venv 模块，正在安装 python3-venv..."
+  apt update && apt install -y python3-venv
+  if ! python3 -m venv --help &>/dev/null; then
+    echo "[-] venv 模块安装失败，请手动安装 python3-venv 后重试"
+    exit 1
+  fi
+  echo "[✓] venv 安装成功"
 fi
 
 # ========== 1. 初始化目录结构 ==========
