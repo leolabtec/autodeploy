@@ -115,5 +115,8 @@ fi
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
-# 自动运行 start.py 脚本，进入虚拟环境并启动 main.py
+# 激活虚拟环境
+source /opt/autodeploy/.venv/bin/activate
+
+# 运行主程序
 python3 /opt/autodeploy/start.py
