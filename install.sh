@@ -2,6 +2,9 @@
 
 set -e
 
+# 防止 apt 安装过程中弹出 whiptail 等窗口
+export DEBIAN_FRONTEND=noninteractive
+
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
 VENV_DIR="$INSTALL_DIR/.venv"
