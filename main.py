@@ -67,9 +67,8 @@ def start():
             if sub_choice == "1":
                 shortcut.set_shortcut()
         elif choice == "0":
-            # 直接退出 main.py，并触发 exit.py
             print("[✓] 退出 AutoDeploy...")
-            os.system("python3 /opt/autodeploy/exit.py")
+            os.system("python3 /opt/autodeploy/exit.py")  # 调用 exit.py 退出虚拟环境
             raise typer.Exit()  # 退出 main.py
         else:
             print("👋 再见！")
