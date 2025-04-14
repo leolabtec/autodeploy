@@ -64,7 +64,7 @@ services:
     image: wordpress
     restart: always
     ports:
-      - "{random_port}:80"
+      - "127.0.0.1:{random_port}:80"
     env_file:
       - .env
     volumes:
