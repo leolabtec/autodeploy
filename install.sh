@@ -4,7 +4,6 @@ set -e
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
-VENV_DIR="$INSTALL_DIR/.venv"
 
 # ========== 0. 检查依赖项 ==========
 check_dep() {
@@ -25,11 +24,11 @@ echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 安装依赖 ==========
+# ========== 2. 安装 Python 依赖 ==========
 echo "[+] 安装 requirements.txt..."
 curl -sS "$REPO_RAW/requirements.txt" -o requirements.txt
 
-# 使用 --break-system-packages 参数，绕过系统对 pip 安装的限制
+# 使用 `--break-system-packages` 绕过系统限制（适用于 Debian/Ubuntu）
 pip install --upgrade pip setuptools virtualenv --break-system-packages
 pip install -r requirements.txt --break-system-packages
 
@@ -89,5 +88,5 @@ fi
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
-# 自动运行 main.py（无需虚拟环境）
-python3 /opt/autodeploy/main.py
+# 直接运行 main.py（宿主机 Python 环境）
+python3 "$INSTALL_DIR/main.py"
