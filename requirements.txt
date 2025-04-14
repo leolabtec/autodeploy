@@ -1,0 +1,8 @@
+typer[all]
+rich
+python-dotenv
+requests
+docker
+psutil
+aiofiles
+httpx
