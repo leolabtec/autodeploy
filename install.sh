@@ -33,12 +33,12 @@ curl -sS "$REPO_RAW/main.py" -o main.py
 mkdir -p core modules
 
 echo "[+] 拉取核心模块 core/..."
-for file in utils.py docker_ops.py caddy.py sync.py; do
+for file in utils.py docker_ops.py caddy.py monitor.py; do
   curl -sS "$REPO_RAW/core/$file" -o "core/$file"
 done
 
 echo "[+] 拉取功能模块 modules/..."
-for file in wordpress.py halo.py; do
+for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py shortcut.py mirror.py; do
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
