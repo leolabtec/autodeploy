@@ -4,6 +4,7 @@ set -e
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
+VENV_DIR="$INSTALL_DIR/.venv"
 
 # ========== 0. 检查依赖项 ==========
 check_dep() {
@@ -27,8 +28,10 @@ cd "$INSTALL_DIR"
 # ========== 2. 安装依赖 ==========
 echo "[+] 安装 requirements.txt..."
 curl -sS "$REPO_RAW/requirements.txt" -o requirements.txt
-pip install --upgrade pip --break-system-packages >/dev/null
-pip install -r requirements.txt >/dev/null
+
+# 使用 --break-system-packages 参数，绕过系统对 pip 安装的限制
+pip install --upgrade pip setuptools virtualenv --break-system-packages
+pip install -r requirements.txt --break-system-packages
 
 # ========== 3. 拉取主程序与模块 ==========
 echo "[+] 拉取主程序 main.py..."
