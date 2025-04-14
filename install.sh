@@ -67,21 +67,17 @@ done
 
 # ========== 5. 拉取 start.py 脚本 ==========
 echo "[+] 拉取 start.py 启动脚本..."
-curl -sS "https://raw.githubusercontent.com/leolabtec/autodeploy/refs/heads/main/start.py" -o "$INSTALL_DIR/start.py"
+curl -v -sS "https://raw.githubusercontent.com/leolabtec/autodeploy/refs/heads/main/start.py" -o "$INSTALL_DIR/start.py"
+
+if [ -f "$INSTALL_DIR/start.py" ]; then
+    echo "[✓] start.py 文件拉取成功！"
+else
+    echo "[!] start.py 文件拉取失败！"
+fi
 
 # ========== 6. 启动或重启 Caddy 容器 ==========
 echo "[+] 启动 Caddy 容器..."
-
 mkdir -p /home/dockerdata/docker_caddy
-
-# 写入默认 Caddyfile（若不存在）
-CADDYFILE="/home/dockerdata/docker_caddy/Caddyfile"
-if [ ! -f "$CADDYFILE" ]; then
-  echo "[+] 准备默认 Caddyfile..."
-  cat <<EOF > "$CADDYFILE"
-# AutoDeploy 默认反代配置（占位）
-EOF
-fi
 
 docker rm -f caddy 2>/dev/null || true
 
@@ -96,7 +92,7 @@ docker run -d \
 
 echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
-# ========== 7. 添加定时巡检任务 ==========
+# ========== 7. 设置定时巡检任务 ==========
 echo "[+] 设置 Caddy 巡检任务..."
 CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
 if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
