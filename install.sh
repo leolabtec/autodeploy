@@ -48,6 +48,17 @@ curl -sS "$REPO_RAW/start_caddy.sh" -o start_caddy.sh
 chmod +x start_caddy.sh
 ./start_caddy.sh
 
-# ========== 4. 启动主程序 ==========
+# ========== 4. 设置定时巡检任务 ==========
+echo "[+] 设置 Caddy 容器健康巡检任务..."
+CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
+
+if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
+  echo "[i] 巡检任务已存在，跳过添加"
+else
+  (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
+  echo "[✓] Cron 任务已添加：每 5 分钟巡检 Caddy"
+fi
+
+# ========== 5. 启动主程序 ==========
 echo "[+] 启动 AutoDeploy 主菜单..."
 $VENV_DIR/bin/python main.py
