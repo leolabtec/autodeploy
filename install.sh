@@ -90,9 +90,16 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
 done
 
 # ========== 5. 准备默认 Caddyfile ==========
-echo "[+] 准备默认 Caddyfile..."
+echo "[+] 准备默认 Caddyfile 配置..."
 mkdir -p /home/dockerdata/docker_caddy
 
+# 修复误创建为目录的问题
+if [ -d /home/dockerdata/docker_caddy/Caddyfile ]; then
+  echo "[!] 检测到 Caddyfile 是目录，删除重建..."
+  rm -rf /home/dockerdata/docker_caddy/Caddyfile
+fi
+
+# 若文件不存在则创建默认文件
 if [ ! -f /home/dockerdata/docker_caddy/Caddyfile ]; then
   cat <<EOF > /home/dockerdata/docker_caddy/Caddyfile
 :80 {
