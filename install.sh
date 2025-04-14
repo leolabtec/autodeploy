@@ -107,10 +107,4 @@ echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
 # 自动运行 start.py 脚本，进入虚拟环境并启动 main.py
-python3 /opt/autodeploy/start.py
-
-# 退出虚拟环境
-deactivate
-
-# 自动退出 shell 回到宿主机
-exit
+/opt/autodeploy/start.py
