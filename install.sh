@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-
 export DEBIAN_FRONTEND=noninteractive
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
@@ -90,9 +89,21 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 5. 启动 Caddy ==========
-echo "[+] 启动 Caddy 容器..."
+# ========== 5. 准备默认 Caddyfile ==========
+echo "[+] 准备默认 Caddyfile..."
 mkdir -p /home/dockerdata/docker_caddy
+
+if [ ! -f /home/dockerdata/docker_caddy/Caddyfile ]; then
+  cat <<EOF > /home/dockerdata/docker_caddy/Caddyfile
+:80 {
+    respond "Caddy is running"
+}
+EOF
+  echo "[✓] 已生成默认 Caddyfile"
+fi
+
+# ========== 6. 启动 Caddy ==========
+echo "[+] 启动 Caddy 容器..."
 docker rm -f caddy 2>/dev/null || true
 docker run -d \
   --name caddy \
@@ -104,7 +115,7 @@ docker run -d \
   caddy:2.7.6
 echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
-# ========== 6. 添加定时巡检任务 ==========
+# ========== 7. 添加定时巡检任务 ==========
 echo "[+] 设置 Caddy 巡检任务..."
 CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
 if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
@@ -114,6 +125,6 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 7. 启动主菜单 ==========
+# ========== 8. 启动主菜单 ==========
 echo "[+] 启动 AutoDeploy 主菜单..."
 $VENV_DIR/bin/python main.py
