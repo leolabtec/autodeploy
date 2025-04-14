@@ -25,23 +25,18 @@ echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 创建 Python 虚拟环境（最终修复版） ==========
+# ========== 2. 创建 Python 虚拟环境（彻底稳定） ==========
 echo "[+] 创建虚拟环境..."
 
-set +e
-python3 -m venv .venv
-VENV_SUCCESS=$?
-set -e
-
-if [ "$VENV_SUCCESS" -eq 0 ]; then
-  echo "[✓] 使用 python3 -m venv 创建成功"
+if python3 -c "import venv; venv.create('$VENV_DIR')" 2>/dev/null; then
+  echo "[✓] 使用 python3 自带 venv 创建成功"
 else
-  echo "[!] venv 创建失败，尝试使用 virtualenv..."
+  echo "[!] venv 模块不可用或创建失败，尝试使用 virtualenv..."
   python3 -m pip install --upgrade pip setuptools virtualenv --break-system-packages
-  python3 -m virtualenv .venv
+  python3 -m virtualenv "$VENV_DIR"
 fi
 
-source .venv/bin/activate
+source "$VENV_DIR/bin/activate"
 
 # ========== 3. 安装依赖 ==========
 echo "[+] 安装 requirements.txt..."
@@ -102,7 +97,7 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 7. 启动主菜单（使用 exec 替换 shell） ==========
+# ========== 7. 启动主菜单 ==========
 echo
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
