@@ -34,7 +34,7 @@ services:
     container_name: {sitename}
     restart: always
     ports:
-      - "{halo_port}:8090"
+      - "127.0.0.1:{halo_port}:8090"
     volumes:
       - ./data:/root/.halo2
 """
