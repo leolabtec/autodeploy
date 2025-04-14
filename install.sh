@@ -25,9 +25,15 @@ echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 创建 Python 虚拟环境（增强版） ==========
+# ========== 2. 创建 Python 虚拟环境（最终修复版） ==========
 echo "[+] 创建虚拟环境..."
-if python3 -m venv .venv 2>/dev/null; then
+
+set +e
+python3 -m venv .venv
+VENV_SUCCESS=$?
+set -e
+
+if [ "$VENV_SUCCESS" -eq 0 ]; then
   echo "[✓] 使用 python3 -m venv 创建成功"
 else
   echo "[!] venv 创建失败，尝试使用 virtualenv..."
