@@ -2,7 +2,7 @@
 
 set -e
 
-# 防止 apt 安装过程中弹出 whiptail 等窗口
+# 防止 apt 弹出 whiptail 等图形提示窗口
 export DEBIAN_FRONTEND=noninteractive
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
@@ -42,12 +42,13 @@ check_dep docker
 check_dep docker-compose
 check_dep crontab
 
-# 检查 venv 模块可用性
+# 检查 venv 模块是否可用，并动态安装匹配版本
 if ! python3 -m venv --help &>/dev/null; then
-  echo "[!] 未检测到 venv 模块，正在安装 python3-venv..."
-  apt update && apt install -y python3-venv
+  PYVER=$(python3 -V 2>&1 | cut -d " " -f2 | cut -d "." -f1,2)  # 获取 3.11
+  echo "[!] 未检测到 venv 模块，尝试安装 python${PYVER}-venv..."
+  apt update && apt install -y "python${PYVER}-venv"
   if ! python3 -m venv --help &>/dev/null; then
-    echo "[-] venv 模块安装失败，请手动安装 python3-venv 后重试"
+    echo "[-] 安装 venv 模块失败，请手动运行：apt install python${PYVER}-venv"
     exit 1
   fi
   echo "[✓] venv 安装成功"
