@@ -3,8 +3,9 @@
 import typer
 from rich import print
 from rich.panel import Panel
-from core import utils, sync
-from modules import wordpress, halo, backup, delete, restore, uninstall
+from rich.prompt import Prompt
+from core import utils
+from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut
 
 app = typer.Typer()
 
@@ -27,14 +28,6 @@ def startup_checks():
     else:
         utils.log_error("⚠️ 网络连接异常，无法访问 github.com")
 
-    try:
-        if sync.check_update_available():
-            print("[yellow]🆕 检测到项目代码有新版本，可运行 `python core/sync.py` 更新[/yellow]")
-        else:
-            utils.log_info("当前已是最新版。")
-    except:
-        utils.log_error("检查更新失败（可能网络不通）")
-
 @app.command()
 def start():
     while True:
@@ -47,6 +40,7 @@ def start():
         print("4. 删除已部署站点")
         print("5. 恢复备份环境")
         print("6. 卸载部署系统")
+        print("7. 配置系统")
         print("0. 退出")
 
         choice = typer.prompt("请输入编号", default="0")
@@ -63,6 +57,22 @@ def start():
             restore.restore_backup()
         elif choice == "6":
             uninstall.uninstall_all()
+        elif choice == "7":
+            while True:
+                print("\n[bold cyan]🔧 配置系统菜单[/bold cyan]")
+                print("1. 设置启动快捷键")
+                print("2. 清除已有快捷键")
+                print("0. 返回主菜单")
+                sub_choice = Prompt.ask("请输入编号", default="0")
+
+                if sub_choice == "1":
+                    shortcut.set_alias()
+                elif sub_choice == "2":
+                    shortcut.remove_alias()
+                elif sub_choice == "0":
+                    break
+                else:
+                    print("[yellow]⚠️ 无效输入，请重新选择。[/yellow]")
         else:
             print("👋 再见！")
             raise typer.Exit()
