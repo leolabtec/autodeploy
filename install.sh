@@ -1,38 +1,53 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
+REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
-PYTHON_BIN="python3"
 VENV_DIR="$INSTALL_DIR/.venv"
 
-echo "[+] 创建项目目录 $INSTALL_DIR..."
+echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# 检查 Python 是否存在
-if ! command -v $PYTHON_BIN &> /dev/null; then
-    echo "[*] 未检测到 Python3，尝试自动安装..."
-
-    if [ -f /etc/alpine-release ]; then
-        echo "[*] 检测到 Alpine 系统，使用 apk 安装 Python3..."
-        apk update && apk add python3 py3-pip py3-virtualenv
-    elif [ -f /etc/debian_version ]; then
-        echo "[*] 检测到 Debian/Ubuntu 系统，使用 apt 安装 Python3..."
-        apt update && apt install -y python3 python3-venv python3-pip
-    else
-        echo "[-] 当前系统未支持自动安装，请手动安装 Python3"
-        exit 1
-    fi
+# ========== 1. 安装 Python 虚拟环境 ==========
+echo "[+] 检查 Python 安装..."
+if ! command -v python3 &>/dev/null; then
+  echo "[-] 未检测到 python3，请先安装 Python 3"
+  exit 1
 fi
 
 echo "[+] 创建虚拟环境..."
-$PYTHON_BIN -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 
-echo "[+] 安装依赖（requirements.txt）..."
+echo "[+] 拉取 requirements.txt 并安装依赖..."
+curl -sS "$REPO_RAW/requirements.txt" -o requirements.txt
 pip install --upgrade pip >/dev/null
 pip install -r requirements.txt >/dev/null
 
-echo "[+] 启动主程序 main.py..."
+# ========== 2. 拉取主程序与模块 ==========
+echo "[+] 拉取主程序 main.py..."
+curl -sS "$REPO_RAW/main.py" -o main.py
+
+mkdir -p core modules
+
+echo "[+] 拉取核心模块 core/..."
+for file in utils.py docker_ops.py caddy.py sync.py; do
+  curl -sS "$REPO_RAW/core/$file" -o "core/$file"
+done
+
+echo "[+] 拉取功能模块 modules/..."
+for file in wordpress.py halo.py; do
+  curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
+done
+
+# ========== 3. 启动或重启 Caddy ==========
+echo "[+] 拉取并启动 Caddy 容器..."
+curl -sS "$REPO_RAW/start_caddy.sh" -o start_caddy.sh
+chmod +x start_caddy.sh
+./start_caddy.sh
+
+# ========== 4. 启动主程序 ==========
+echo "[+] 启动 AutoDeploy 主菜单..."
 $VENV_DIR/bin/python main.py
