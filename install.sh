@@ -116,4 +116,4 @@ echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
 echo "[✓] 虚拟环境已创建，请使用以下命令激活虚拟环境："
-source /opt/autodeploy/.venv/bin/activate && python3 main.py"
+echo "source /opt/autodeploy/.venv/bin/activate && python3 main.py"
