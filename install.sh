@@ -25,31 +25,13 @@ echo "[+] 创建主目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 创建 Python 虚拟环境（最终修复版） ==========
-echo "[+] 创建虚拟环境..."
-
-set +e
-python3 -m venv .venv
-VENV_SUCCESS=$?
-set -e
-
-if [ "$VENV_SUCCESS" -eq 0 ]; then
-  echo "[✓] 使用 python3 -m venv 创建成功"
-else
-  echo "[!] venv 创建失败，尝试使用 virtualenv..."
-  python3 -m pip install --upgrade pip setuptools virtualenv --break-system-packages
-  python3 -m virtualenv .venv
-fi
-
-source .venv/bin/activate
-
-# ========== 3. 安装依赖 ==========
+# ========== 2. 安装依赖 ==========
 echo "[+] 安装 requirements.txt..."
 curl -sS "$REPO_RAW/requirements.txt" -o requirements.txt
 pip install --upgrade pip >/dev/null
 pip install -r requirements.txt >/dev/null
 
-# ========== 4. 拉取主程序与模块 ==========
+# ========== 3. 拉取主程序与模块 ==========
 echo "[+] 拉取主程序 main.py..."
 curl -sS "$REPO_RAW/main.py" -o main.py
 
@@ -65,18 +47,8 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 5. 拉取 start.py 和 exit.py 启动脚本 ==========
-echo "[+] 拉取 start.py 和 exit.py 启动脚本..."
-for file in start.py exit.py; do
-  curl -sS "$REPO_RAW/$file" -o "$INSTALL_DIR/$file"
-done
-
-# 不需要赋予执行权限，Python 脚本不需要赋权
-echo "[✓] start.py 和 exit.py 拉取成功"
-
-# ========== 6. 启动或重启 Caddy 容器 ==========
+# ========== 4. 启动或重启 Caddy 容器 ==========
 echo "[+] 启动 Caddy 容器..."
-
 mkdir -p /home/dockerdata/docker_caddy
 
 # 写入默认 Caddyfile（若不存在）
@@ -101,19 +73,19 @@ docker run -d \
 
 echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
-# ========== 7. 添加定时巡检任务 ==========
+# ========== 5. 添加定时巡检任务 ==========
 echo "[+] 设置 Caddy 巡检任务..."
-CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
-if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
+CRON_JOB="*/5 * * * * python3 $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
+if crontab -l 2>/dev/null | grep -F "$CRON_JOB" > /dev/null; then
   echo "[i] 巡检任务已存在"
 else
   (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 8. 自动执行 start.py 启动主菜单 ==========
+# ========== 6. 自动执行 start.py 启动主菜单 ==========
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
-echo "[✓] 虚拟环境已创建，请使用以下命令激活虚拟环境："
-echo "source /opt/autodeploy/.venv/bin/activate && python3 main.py"
+# 自动运行 main.py（虚拟环境已不再使用）
+python3 /opt/autodeploy/main.py
