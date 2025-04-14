@@ -118,5 +118,3 @@ sleep 1
 # 激活虚拟环境
 source /opt/autodeploy/.venv/bin/activate
 
-# 运行主程序
-python3 /opt/autodeploy/main.py
