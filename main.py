@@ -5,7 +5,7 @@ from rich import print
 from rich.panel import Panel
 from rich.prompt import Prompt
 from core import utils
-from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut
+from modules import wordpress, halo, backup, delete, restore, uninstall, shortcut, mirror
 
 app = typer.Typer()
 
@@ -62,6 +62,8 @@ def start():
                 print("\n[bold cyan]🔧 配置系统菜单[/bold cyan]")
                 print("1. 设置启动快捷键")
                 print("2. 清除已有快捷键")
+                print("3. 启用国内镜像源")
+                print("4. 还原官方镜像源")
                 print("0. 返回主菜单")
                 sub_choice = Prompt.ask("请输入编号", default="0")
 
@@ -69,6 +71,10 @@ def start():
                     shortcut.set_alias()
                 elif sub_choice == "2":
                     shortcut.remove_alias()
+                elif sub_choice == "3":
+                    mirror.enable_mirrors()
+                elif sub_choice == "4":
+                    mirror.reset_mirrors()
                 elif sub_choice == "0":
                     break
                 else:
