@@ -101,4 +101,10 @@ fi
 echo
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
-exec "$VENV_DIR/bin/python" main.py
+if [ -t 0 ]; then
+  echo "[+] 启动 AutoDeploy 主菜单..."
+  exec "$VENV_DIR/bin/python" main.py
+else
+  echo "[✓] 安装完成。你可以稍后运行："
+  echo "cd /opt/autodeploy && source .venv/bin/activate && python main.py"
+fi
