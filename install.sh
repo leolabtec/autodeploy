@@ -4,7 +4,6 @@ set -e
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
-VENV_DIR="$INSTALL_DIR/.venv"
 
 # ========== 0. 检查依赖项 ==========
 check_dep() {
@@ -28,7 +27,7 @@ cd "$INSTALL_DIR"
 # ========== 2. 安装依赖 ==========
 echo "[+] 安装 requirements.txt..."
 curl -sS "$REPO_RAW/requirements.txt" -o requirements.txt
-pip install --upgrade pip >/dev/null
+pip install --upgrade pip --break-system-packages >/dev/null
 pip install -r requirements.txt >/dev/null
 
 # ========== 3. 拉取主程序与模块 ==========
@@ -83,9 +82,9 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 6. 自动执行 start.py 启动主菜单 ==========
+# ========== 6. 自动执行 main.py 启动主菜单 ==========
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
-# 自动运行 main.py（虚拟环境已不再使用）
+# 自动运行 main.py（无需虚拟环境）
 python3 /opt/autodeploy/main.py
