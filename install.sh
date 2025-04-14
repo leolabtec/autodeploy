@@ -2,86 +2,77 @@
 
 set -e
 
-# 防止 apt 弹出 whiptail 界面
+# 防止弹窗
 export DEBIAN_FRONTEND=noninteractive
 
 REPO_RAW="https://raw.githubusercontent.com/leolabtec/autodeploy/main"
 INSTALL_DIR="/opt/autodeploy"
 VENV_DIR="$INSTALL_DIR/.venv"
 
-# ========== 0. 自动检查并静默安装依赖项 ==========
+# ========== 0. 自动检查并安装依赖 ==========
 check_dep() {
   if ! command -v "$1" &>/dev/null; then
-    echo "[!] 未检测到 $1，正在尝试自动安装..."
-
+    echo "[!] 未检测到 $1，正在自动安装..."
     case "$1" in
       python3) apt update && apt install -y python3 ;;
-      pip) apt update && apt install -y python3-pip ;;
-      docker) apt update && apt install -y docker.io ;;
-      docker-compose) apt update && apt install -y docker-compose ;;
-      crontab) apt update && apt install -y cron ;;
-      *)
-        echo "[-] 未知依赖：$1，无法自动安装"
-        exit 1
-        ;;
+      pip) apt install -y python3-pip ;;
+      docker) apt install -y docker.io ;;
+      docker-compose) apt install -y docker-compose ;;
+      crontab) apt install -y cron ;;
+      *) echo "[-] 未知依赖：$1" && exit 1 ;;
     esac
-
-    if ! command -v "$1" &>/dev/null; then
-      echo "[-] 安装 $1 失败，请手动安装后重试"
-      exit 1
-    fi
-
+    command -v "$1" &>/dev/null || { echo "[-] $1 安装失败"; exit 1; }
     echo "[✓] $1 安装成功"
   fi
 }
 
-echo "[+] 正在检查并准备系统关键依赖..."
+echo "[+] 检查关键依赖..."
 check_dep python3
 check_dep pip
 check_dep docker
 check_dep docker-compose
 check_dep crontab
 
-# ========== venv 检查与 ensurepip 修复 ==========
+# ========== 1. 处理 venv 模块 & fallback ==========
+PYVER=$(python3 -V 2>&1 | cut -d " " -f2 | cut -d "." -f1,2)
 if ! python3 -m venv --help &>/dev/null; then
-  PYVER=$(python3 -V 2>&1 | cut -d " " -f2 | cut -d "." -f1,2)
-  echo "[!] 未检测到 venv 模块，尝试安装 python${PYVER}-venv..."
-  apt update && apt install -y "python${PYVER}-venv"
-
-  if ! python3 -m venv --help &>/dev/null; then
-    echo "[!] venv 模块仍不可用，尝试修复 ensurepip..."
-    apt install -y python3-ensurepip
-    python3 -m ensurepip --upgrade
-  fi
-
-  if ! python3 -m venv --help &>/dev/null; then
-    echo "[-] 安装 venv 模块失败，请手动执行："
-    echo "    apt install python${PYVER}-venv python3-ensurepip"
-    exit 1
-  fi
-
-  echo "[✓] venv 模块已准备就绪"
+  echo "[!] venv 不可用，安装 python${PYVER}-venv..."
+  apt install -y "python${PYVER}-venv"
 fi
 
-# ========== 1. 初始化目录结构 ==========
-echo "[+] 创建主目录 $INSTALL_DIR..."
+if ! python3 -m venv --help &>/dev/null; then
+  echo "[!] 修复 ensurepip..."
+  apt install -y python3-ensurepip
+  python3 -m ensurepip --upgrade
+fi
+
+# ========== 2. 初始化目录结构 ==========
+echo "[+] 创建目录 $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
-# ========== 2. 创建 Python 虚拟环境 ==========
+# ========== 3. 创建虚拟环境（含 fallback）==========
 echo "[+] 创建虚拟环境..."
-python3 -m venv .venv
+if ! python3 -m venv .venv 2>/dev/null; then
+  echo "[!] venv 创建失败，使用 virtualenv fallback..."
+  python3 -m pip install --upgrade pip setuptools virtualenv
+  virtualenv .venv
+  if [ ! -f ".venv/bin/activate" ]; then
+    echo "[-] fallback 虚拟环境创建失败，请检查 Python 配置"
+    exit 1
+  fi
+fi
 source .venv/bin/activate
 
-echo "[+] 拉取 requirements.txt 并安装依赖..."
+# ========== 4. 安装 Python 依赖 ==========
+echo "[+] 安装 requirements..."
 curl -sS "$REPO_RAW/requirements.txt" -o requirements.txt
 pip install --upgrade pip >/dev/null
 pip install -r requirements.txt >/dev/null
 
-# ========== 3. 拉取主程序与模块 ==========
-echo "[+] 拉取主程序 main.py..."
+# ========== 5. 拉取主程序与模块 ==========
+echo "[+] 拉取主程序..."
 curl -sS "$REPO_RAW/main.py" -o main.py
-
 mkdir -p core modules
 
 echo "[+] 拉取核心模块 core/..."
@@ -94,13 +85,10 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 4. 启动或重启 Caddy 容器 ==========
-echo "[+] 启动或重启 Caddy 容器..."
-
+# ========== 6. 启动 Caddy 容器 ==========
+echo "[+] 启动 Caddy..."
 mkdir -p /home/dockerdata/docker_caddy
-
 docker rm -f caddy 2>/dev/null || true
-
 docker run -d \
   --name caddy \
   --restart=unless-stopped \
@@ -109,21 +97,18 @@ docker run -d \
   -v /home/dockerdata/docker_caddy:/data \
   -v /home/dockerdata/docker_caddy:/config \
   caddy:2.7.6
-
 echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
-# ========== 5. 添加 Caddy 容器定时健康巡检任务 ==========
-echo "[+] 设置 Caddy 容器健康巡检任务..."
-
+# ========== 7. 设置定时巡检 ==========
+echo "[+] 设置 Caddy 巡检任务..."
 CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
-
 if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
-  echo "[i] 巡检任务已存在，跳过添加"
+  echo "[i] 巡检任务已存在"
 else
   (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
-  echo "[✓] Cron 任务已添加：每 5 分钟巡检 Caddy"
+  echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 6. 启动主菜单 ==========
+# ========== 8. 启动主菜单 ==========
 echo "[+] 启动 AutoDeploy 主菜单..."
 $VENV_DIR/bin/python main.py
