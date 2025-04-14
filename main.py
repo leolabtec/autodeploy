@@ -42,10 +42,13 @@ def start():
         print("7. 配置系统")
         print("0. 退出")
 
+        # 捕获输入错误，避免未检测到输入时退出
         try:
             choice = typer.prompt("请输入编号", default="0")
-        except (EOFError, KeyboardInterrupt):
-            print("\n[red]⚠️ 未检测到输入，已返回主菜单[/red]")
+            if not choice.strip():  # 输入为空时，重新提示
+                raise ValueError("无效输入，请输入有效编号")
+        except (EOFError, KeyboardInterrupt, ValueError) as e:
+            print(f"\n[red]⚠️ 错误：{e}，已返回主菜单[/red]")
             continue
 
         if choice == "1":
@@ -72,9 +75,8 @@ def start():
 
             if sub_choice == "1":
                 shortcut.set_shortcut()
+        elif choice == "0":
+            print("[✓] 退出 AutoDeploy...")
+            break  # 用户选择退出时退出循环
         else:
-            print("👋 再见！")
-            raise typer.Exit()
-
-if __name__ == "__main__":
-    app()
+            print("[red]无效的选择，请重新输入！[/red]")
