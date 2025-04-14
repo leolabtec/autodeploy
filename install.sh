@@ -42,11 +42,26 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 3. 启动或重启 Caddy ==========
-echo "[+] 拉取并启动 Caddy 容器..."
-curl -sS "$REPO_RAW/start_caddy.sh" -o start_caddy.sh
-chmod +x start_caddy.sh
-./start_caddy.sh
+# ========== 3. 启动 Caddy 容器 ==========
+echo "[+] 启动或重启 Caddy 容器..."
+
+# 自动创建 Caddy 配置目录（如果不存在）
+mkdir -p /home/dockerdata/docker_caddy
+
+# 如已有同名容器则移除
+docker rm -f caddy 2>/dev/null || true
+
+# 启动 Caddy 容器（host 模式 + 自动加载配置）
+docker run -d \
+  --name caddy \
+  --restart=unless-stopped \
+  --network host \
+  -v /home/dockerdata/docker_caddy/Caddyfile:/etc/caddy/Caddyfile \
+  -v /home/dockerdata/docker_caddy:/data \
+  -v /home/dockerdata/docker_caddy:/config \
+  caddy:2.7.6
+
+echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
 # ========== 4. 设置定时巡检任务 ==========
 echo "[+] 设置 Caddy 容器健康巡检任务..."
