@@ -65,7 +65,16 @@ for file in wordpress.py halo.py delete.py backup.py restore.py uninstall.py sho
   curl -sS "$REPO_RAW/modules/$file" -o "modules/$file"
 done
 
-# ========== 5. 启动或重启 Caddy 容器 ==========
+# ========== 5. 拉取 start.py 和 exit.py 启动脚本 ==========
+echo "[+] 拉取 start.py 和 exit.py 启动脚本..."
+for file in start.py exit.py; do
+  curl -sS "$REPO_RAW/$file" -o "$INSTALL_DIR/$file"
+done
+
+# 不需要赋予执行权限，Python 脚本不需要赋权
+echo "[✓] start.py 和 exit.py 拉取成功"
+
+# ========== 6. 启动或重启 Caddy 容器 ==========
 echo "[+] 启动 Caddy 容器..."
 
 mkdir -p /home/dockerdata/docker_caddy
@@ -92,7 +101,7 @@ docker run -d \
 
 echo "[✓] Caddy 已启动 (host 模式监听 80/443)"
 
-# ========== 6. 添加定时巡检任务 ==========
+# ========== 7. 添加定时巡检任务 ==========
 echo "[+] 设置 Caddy 巡检任务..."
 CRON_JOB="*/5 * * * * $VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py >> /var/log/autodeploy_monitor.log 2>&1"
 if crontab -l 2>/dev/null | grep -F "$VENV_DIR/bin/python $INSTALL_DIR/core/monitor.py" > /dev/null; then
@@ -102,7 +111,7 @@ else
   echo "[✓] 已添加 crontab 巡检任务"
 fi
 
-# ========== 7. 自动执行 start.py 启动主菜单 ==========
+# ========== 8. 自动执行 start.py 启动主菜单 ==========
 echo "[✓] 环境部署完成，正在启动 AutoDeploy 主菜单..."
 sleep 1
 
