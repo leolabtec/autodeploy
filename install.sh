@@ -9,7 +9,14 @@ VENV_DIR="$INSTALL_DIR/.venv"
 # ========== 0. 检查依赖项 ==========
 check_dep() {
   if ! command -v "$1" &>/dev/null; then
-    echo "[-] 缺少必要依赖：$1，请先安装后再运行本脚本。"
+    echo "[-] 缺少必要依赖：$1，请先运行以下命令安装："
+    case "$1" in
+      python3) echo "    apt install -y python3" ;;
+      pip) echo "    apt install -y python3-pip" ;;
+      docker) echo "    apt install -y docker.io" ;;
+      docker-compose) echo "    apt install -y docker-compose" ;;
+      crontab) echo "    apt install -y cron" ;;
+    esac
     exit 1
   fi
 }
@@ -18,11 +25,13 @@ echo "[+] 正在检查系统关键依赖..."
 check_dep python3
 check_dep pip
 check_dep docker
+check_dep docker-compose
 check_dep crontab
 
 # 检查 venv 模块可用性
 if ! python3 -m venv --help &>/dev/null; then
-  echo "[-] 当前 python3 缺少 venv 模块，请运行：sudo apt install python3-venv"
+  echo "[-] 当前 python3 缺少 venv 模块，请运行以下命令安装："
+  echo "    apt install -y python3-venv"
   exit 1
 fi
 
